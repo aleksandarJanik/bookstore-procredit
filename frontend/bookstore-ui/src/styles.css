@@ -1,0 +1,25 @@
+:root {
+  --paper: #e9edf2;
+  --surface: #f7f8fa;
+  --ink: #101c32;
+  --muted: #5e6878;
+  --line: #c7ced8;
+  --cobalt: #1748d1;
+  --cobalt-dark: #0d318f;
+  --signal: #c9ff48;
+  --danger: #a21d3b;
+  --display: Baskerville, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --body: Aptos, "Segoe UI", sans-serif;
+  --utility: "Cascadia Mono", Consolas, monospace;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--paper); }
+body { min-height: 100vh; margin: 0; }
+button, input { font: inherit; }
+button { touch-action: manipulation; }
+::selection { color: white; background: var(--cobalt); }

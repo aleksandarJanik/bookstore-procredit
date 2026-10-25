@@ -1,0 +1,34 @@
+@api = http://localhost:5000
+@identity = http://localhost:8080/realms/bookstore
+
+# @name token
+POST {{identity}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+client_id=bookstore-service&client_secret=bookstore-service-local-secret&grant_type=client_credentials&scope=books.manage
+
+###
+
+@accessToken = {{token.response.body.$.access_token}}
+
+POST {{api}}/api/books
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "author": { "authorId": null, "name": "Virginia Woolf" },
+  "title": "Mrs Dalloway",
+  "subTitle": null
+}
+
+###
+
+GET {{api}}/api/authors
+Authorization: Bearer {{accessToken}}
+
+###
+
+GET {{api}}/api/books/1
+Authorization: Bearer {{accessToken}}
+
+###

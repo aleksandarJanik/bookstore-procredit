@@ -1,0 +1,21 @@
+# Installed SDK and dependencies
+.dotnet/
+**/node_modules/
+
+# Generated builds and caches
+**/bin/
+**/obj/
+**/dist/
+**/.angular/
+TestResults/
+
+# Local editor settings
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Local secrets
+.env
+.env.*
+!.env.example

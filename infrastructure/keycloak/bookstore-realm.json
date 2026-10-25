@@ -1,0 +1,129 @@
+{
+  "realm": "bookstore",
+  "enabled": true,
+  "displayName": "Bookstore",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "resetPasswordAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "roles": {
+    "realm": [
+      {
+        "name": "bookstore-editor",
+        "description": "May use the bookstore management UI"
+      }
+    ]
+  },
+  "clientScopes": [
+    {
+      "name": "books.search",
+      "description": "Search the bookstore catalogue",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "true" },
+      "protocolMappers": [
+        {
+          "name": "bookstore-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "bookstore-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "user.attribute": "foo",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "books.manage",
+      "description": "Manage bookstore books",
+      "protocol": "openid-connect",
+      "attributes": { "include.in.token.scope": "true", "display.on.consent.screen": "false" },
+      "protocolMappers": [
+        {
+          "name": "bookstore-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "bookstore-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "bookstore-api",
+      "name": "Bookstore API",
+      "enabled": true,
+      "bearerOnly": true,
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "bookstore-ui",
+      "name": "Bookstore Angular UI",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://localhost:4201/*",
+        "http://localhost:5000/swagger/oauth2-redirect.html"
+      ],
+      "webOrigins": ["http://localhost:4200", "http://localhost:4201", "http://localhost:5000"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "optionalClientScopes": ["books.search"]
+    },
+    {
+      "clientId": "bookstore-service",
+      "name": "Bookstore Service Client",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "bookstore-service-local-secret",
+      "clientAuthenticatorType": "client-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect",
+      "webOrigins": ["http://localhost:5000"],
+      "defaultClientScopes": ["books.manage"]
+    }
+  ],
+  "users": [
+    {
+      "username": "reader",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Reader",
+      "email": "reader@example.local",
+      "realmRoles": ["bookstore-editor"],
+      "credentials": [
+        { "type": "password", "value": "Reader123!", "temporary": false }
+      ]
+    }
+  ]
+}

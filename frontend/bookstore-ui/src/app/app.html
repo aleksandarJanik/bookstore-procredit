@@ -1,0 +1,245 @@
+<div class="shell">
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="Bookstore catalogue home">
+      <span class="brand-mark" aria-hidden="true"><i></i><b>B</b></span>
+      <span class="brand-name">Bookstore<small>Catalogue desk</small></span>
+    </a>
+
+    @if (auth.authenticated()) {
+      <div class="account">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>Signed in as <strong>{{ auth.username() }}</strong></span>
+        <button class="text-button" type="button" (click)="auth.logout()">Sign out</button>
+      </div>
+    } @else {
+      <span class="access-label"><i aria-hidden="true"></i> Restricted catalogue</span>
+    }
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="intro">
+        <p class="eyebrow"><span>Digital collection</span><span>Vol. 01</span></p>
+        <h1 id="page-title">Find the book<br /><em>you remember.</em></h1>
+        <p class="lede">A focused index of titles and authors—built for finding the right book without wandering the shelves.</p>
+        <div class="search-keys" aria-label="Available search fields">
+          <span>Title</span><i></i><span>Author</span><i></i><span>Catalogue</span>
+        </div>
+      </div>
+
+      <div class="shelf-card" aria-hidden="true">
+        <div class="shelf-meta"><span>CURATED INDEX</span><span>2026</span></div>
+        <div class="book-spines">
+          <div class="spine spine-one"><small>01</small><span>FICTION</span><b>B</b></div>
+          <div class="spine spine-two"><small>02</small><span>CLASSICS</span><b>K</b></div>
+          <div class="spine spine-three"><small>03</small><span>ESSAYS</span><b>S</b></div>
+        </div>
+        <div class="shelf-line"><span>BOOKSTORE / CATALOGUE</span><b></b></div>
+      </div>
+    </section>
+
+    @if (auth.unavailable()) {
+      <section class="notice error" role="alert">
+        <span class="notice-mark" aria-hidden="true">!</span>
+        <div><strong>Sign-in service unavailable</strong><span>Start Keycloak, then reload this page.</span></div>
+      </section>
+    } @else if (!auth.authenticated()) {
+      <section class="login-panel" aria-labelledby="login-title">
+        <div class="panel-index" aria-hidden="true">01</div>
+        <div class="panel-copy">
+          <p class="catalogue-code">Reader access</p>
+          <h2 id="login-title">The catalogue is protected</h2>
+          <p>Sign in through the secure reading-room account to search the collection.</p>
+        </div>
+        <button class="primary" type="button" (click)="auth.login()">
+          <span>Sign in to search</span><span aria-hidden="true">↗</span>
+        </button>
+      </section>
+    } @else {
+      <section class="management-area" aria-labelledby="management-title">
+        <header class="management-heading">
+          <div>
+            <p class="catalogue-code">Librarian desk</p>
+            <h2 id="management-title">Manage the collection</h2>
+          </div>
+          <p>Add a new volume, retrieve its catalogue record, or remove it from circulation.</p>
+        </header>
+
+        <div class="management-grid">
+          <form class="desk-card create-card" [formGroup]="createForm" (ngSubmit)="createBook()">
+            <div class="desk-card-heading">
+              <span class="operation-mark" aria-hidden="true">+</span>
+              <div><small>Create</small><h3>Add a book</h3></div>
+            </div>
+
+            <fieldset class="author-choice">
+              <legend>Author</legend>
+              <label>
+                <input formControlName="authorMode" type="radio" value="existing" [attr.disabled]="authors().length === 0 ? '' : null" />
+                <span>Existing author</span>
+              </label>
+              <label>
+                <input formControlName="authorMode" type="radio" value="new" />
+                <span>New author</span>
+              </label>
+            </fieldset>
+
+            @if (createForm.controls.authorMode.value === 'existing') {
+              <label>
+                <span>Choose author</span>
+                <select formControlName="authorId" [attr.aria-busy]="authorLoading()" [attr.disabled]="authorLoading() ? '' : null">
+                  @for (author of authors(); track author.authorId) {
+                    <option [ngValue]="author.authorId">{{ author.name }}</option>
+                  }
+                </select>
+              </label>
+            } @else {
+              <label>
+                <span>Author name</span>
+                <input formControlName="authorName" type="text" maxlength="100" placeholder="George Orwell" autocomplete="off" />
+              </label>
+            }
+            @if (authorLoading()) { <p class="author-note">Loading existing authors…</p> }
+            @if (authorError()) { <p class="field-error">{{ authorError() }}</p> }
+            <label>
+              <span>Book title</span>
+              <input formControlName="title" type="text" maxlength="100" placeholder="Nineteen Eighty-Four" />
+            </label>
+            <label>
+              <span>Subtitle <i>Optional</i></span>
+              <input formControlName="subTitle" type="text" placeholder="A novel" />
+            </label>
+
+            @if (createForm.touched && createForm.invalid) {
+              <p class="field-error">Choose an author or enter a name with at least 3 characters; the title also needs at least 3 characters.</p>
+            }
+            <button class="primary" type="submit" [disabled]="managementLoading()">
+              <span>{{ managementLoading() ? 'Saving…' : 'Add to catalogue' }}</span><span aria-hidden="true">→</span>
+            </button>
+          </form>
+
+          <div class="desk-card retrieve-card">
+            <div class="desk-card-heading">
+              <span class="operation-mark" aria-hidden="true">#</span>
+              <div><small>Retrieve & delete</small><h3>Find one record</h3></div>
+            </div>
+
+            <form class="lookup-form" [formGroup]="lookupForm" (ngSubmit)="getBook()">
+              <label>
+                <span>Book ID</span>
+                <input formControlName="bookId" type="number" min="1" inputmode="numeric" />
+              </label>
+              <button class="secondary" type="submit" [disabled]="managementLoading()">Retrieve book</button>
+            </form>
+
+            @if (selectedBook(); as book) {
+              <article class="selected-book">
+                <div class="selected-monogram" aria-hidden="true">{{ book.title.charAt(0) }}</div>
+                <div>
+                  <small>BK—{{ book.bookId.toString().padStart(4, '0') }}</small>
+                  <h4>{{ book.title }}</h4>
+                  @if (book.subTitle) { <p>{{ book.subTitle }}</p> }
+                  <strong>{{ book.author.name }}</strong>
+                </div>
+              </article>
+
+              <div class="delete-row">
+                @if (deletePending()) {
+                  <span>Remove this record permanently?</span>
+                  <button class="danger-button" type="button" (click)="confirmDelete()" [disabled]="managementLoading()">Confirm delete</button>
+                  <button class="text-button" type="button" (click)="deletePending.set(false)">Cancel</button>
+                } @else {
+                  <button class="danger-link" type="button" (click)="deletePending.set(true)">Delete this book</button>
+                }
+              </div>
+            } @else {
+              <div class="record-placeholder">
+                <span aria-hidden="true">BK</span>
+                <p>Enter a book ID to inspect its full catalogue record.</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="management-feedback" aria-live="polite">
+          @if (managementMessage()) { <p class="success-message">{{ managementMessage() }}</p> }
+          @if (managementError()) { <p class="field-error">{{ managementError() }}</p> }
+        </div>
+      </section>
+
+      <section class="search-panel" aria-labelledby="search-title">
+        <div class="section-heading">
+          <div>
+            <p class="catalogue-code">Catalogue search</p>
+            <h2 id="search-title">Search the collection</h2>
+          </div>
+          @if (result(); as page) {
+            <span class="result-count"><b>{{ page.totalCount }}</b> {{ page.totalCount === 1 ? 'book' : 'books' }}</span>
+          }
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="search(1)" class="search-form">
+          <label>
+            <span><i>01</i> Title contains</span>
+            <input formControlName="title" type="search" placeholder="Try “Animal Farm”" autocomplete="off" />
+          </label>
+          <label>
+            <span><i>02</i> Author contains</span>
+            <input formControlName="author" type="search" placeholder="Try “Orwell”" autocomplete="off" />
+          </label>
+          <div class="actions">
+            <button class="primary" type="submit" [disabled]="loading()">
+              <span>{{ loading() ? 'Searching…' : 'Search catalogue' }}</span><span aria-hidden="true">→</span>
+            </button>
+            <button class="text-button" type="button" (click)="clear()" [disabled]="loading()">Clear</button>
+          </div>
+        </form>
+      </section>
+
+      @if (error()) {
+        <section class="notice error" role="alert">
+          <span class="notice-mark" aria-hidden="true">!</span>
+          <div><strong>Search failed</strong><span>{{ error() }}</span></div>
+        </section>
+      }
+
+      @if (result(); as page) {
+        <section class="results" aria-live="polite" [attr.aria-busy]="loading()">
+          <div class="results-label"><span>Search results</span><span>Title / Author / Reference</span></div>
+          @for (book of page.items; track book.bookId) {
+            <article class="book-card">
+              <span class="book-id">BK—{{ book.bookId.toString().padStart(4, '0') }}</span>
+              <div class="book-monogram" aria-hidden="true">{{ book.title.charAt(0) }}</div>
+              <div class="book-copy">
+                <h3>{{ book.title }}</h3>
+                @if (book.subTitle) { <p class="subtitle">{{ book.subTitle }}</p> }
+                <p class="author">{{ book.author.name }}</p>
+              </div>
+              <span class="author-id">AUTHOR<br /><b>A—{{ book.author.authorId }}</b></span>
+            </article>
+          } @empty {
+            <div class="empty-state">
+              <span aria-hidden="true">Ø</span>
+              <h3>No matching books</h3>
+              <p>Try fewer words or search only by title or author.</p>
+            </div>
+          }
+
+          @if (page.totalPages > 1) {
+            <nav class="pagination" aria-label="Search result pages">
+              <button type="button" (click)="search(page.page - 1)" [disabled]="page.page === 1 || loading()">Previous</button>
+              <span>Page {{ page.page }} of {{ page.totalPages }}</span>
+              <button type="button" (click)="search(page.page + 1)" [disabled]="page.page === page.totalPages || loading()">Next</button>
+            </nav>
+          }
+        </section>
+      }
+    }
+  </main>
+
+  <footer>
+    <span>Bookstore catalogue</span>
+    <span class="footer-rule"></span>
+    <span>Restricted access · {{ currentYear }}</span>
+  </footer>
+</div>
